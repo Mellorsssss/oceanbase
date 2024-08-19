@@ -44,10 +44,12 @@ public:
   int generate(DfoInfo &root, ObIArray<DfoInfo *> &edges);
 
 private:
-  int check_if_need_do_earlier_sched(const DfoInfo &child, bool &do_earlier_sched);
-  int has_bypassable_material(const ObLogicalOperator *op, bool &found) const;
+  int check_if_need_do_earlier_sched(const DfoInfo &child, bool &do_earlier_sched,
+                                     bool &do_child_earlier_sched);
+  int has_bypassable_material(const ObLogicalOperator *op, bool &found, bool &found_child) const;
   int has_operator_consume_1by1(const ObLogicalOperator *op, bool &found) const;
   int set_dfo_need_early_sched(ObLogicalOperator *log_op);
+  int set_dfo_need_child_early_sched(ObLogicalOperator *log_op);
 };
 } // namespace sql
 }
@@ -93,8 +95,11 @@ int SchedDepthGenerator::generate(DfoInfo &root, ObIArray<DfoInfo *> &edges)
       LOG_WARN("fail do generate edge", K(*child), K(ret));
     } else {
       bool do_earlier_sched = false;
-      if (OB_FAIL(check_if_need_do_earlier_sched(*child, do_earlier_sched))) {
+      bool do_child_earlier_sched = false;
+      if (OB_FAIL(check_if_need_do_earlier_sched(*child, do_earlier_sched, do_child_earlier_sched))) {
         LOG_WARN("fail to check if need do earlier schedule");
+      } else if (do_child_earlier_sched && OB_FAIL(set_dfo_need_child_early_sched(child->get_root_op()))) {
+        LOG_WARN("fail to set need child scheduled");  
       } else if (!do_earlier_sched) {
         // do nothing
       } else if (OB_FAIL(set_dfo_need_early_sched(child->get_root_op()))) {
@@ -142,7 +147,8 @@ int SchedDepthGenerator::generate(DfoInfo &root, ObIArray<DfoInfo *> &edges)
 }
 
 int SchedDepthGenerator::check_if_need_do_earlier_sched(const DfoInfo &child,
-                                                        bool &do_earlier_sched)
+                                                        bool &do_earlier_sched,
+                                                        bool &do_child_earlier_sched)
 {
   int ret = OB_SUCCESS;
   ObLogicalOperator *root_op = child.get_root_op();
@@ -150,38 +156,50 @@ int SchedDepthGenerator::check_if_need_do_earlier_sched(const DfoInfo &child,
     ret = OB_ERR_UNEXPECTED;
     LOG_WARN("the root operator of DFO should be exchange");
   } else if (OB_FAIL(has_bypassable_material(root_op->get_child(ObLogicalOperator::first_child),
-                                             do_earlier_sched))) {
+                                             do_earlier_sched, do_child_earlier_sched))) {
     LOG_WARN("fail to detect bypassable material");
   }
 
   return ret;
 }
 
-int SchedDepthGenerator::has_bypassable_material(const ObLogicalOperator *op, bool &found) const
+int SchedDepthGenerator::has_bypassable_material(const ObLogicalOperator *op, bool &found,
+                                                 bool &found_child) const
 {
   int ret = OB_SUCCESS;
+  const ObLogMaterial *mat_op = NULL;
+  found = false;
+  found_child = false;
+
   if (OB_ISNULL(op)) {
     ret = OB_ERR_UNEXPECTED;
     LOG_WARN("operator shouldn't be null");
   } else if (log_op_def::LOG_EXCHANGE == op->get_type()) {
     found = false;
-  } else if (log_op_def::LOG_MATERIAL == op->get_type()) {
-    const ObLogMaterial *mat_op = static_cast<const ObLogMaterial *>(op);
-    if (OB_ISNULL(mat_op)) {
-      ret = OB_ERR_UNEXPECTED;
-      LOG_WARN("fail to cast ObLogicalOperator to ObLogMaterial");
-    } else {
-      found = mat_op->get_bypassable();
-    }
+  } else if (log_op_def::LOG_MATERIAL == op->get_type()
+             && OB_ISNULL(mat_op = static_cast<const ObLogMaterial *>(op))) {
+    ret = OB_ERR_UNEXPECTED;
+    LOG_WARN("fail to cast ObLogicalOperator to ObLogMaterial");
+  } else if (OB_NOT_NULL(mat_op) && log_op_def::LOG_EXCHANGE == mat_op->get_parent()->get_type()
+             && OB_FALSE_IT(found = mat_op->get_bypassable())) {
+    // never hit, set found to true if parent operator is exchange
+  } else if (OB_NOT_NULL(mat_op) && log_op_def::LOG_EXCHANGE != mat_op->get_parent()->get_type()
+             && OB_FALSE_IT(found_child = mat_op->get_bypassable())) {
+    // never hit, set found_child to true if parent operator is normal operator
   } else {
-    for (int64_t i = 0; OB_SUCC(ret) && !found && i < op->get_num_of_child(); ++i) {
+    for (int64_t i = 0; OB_SUCC(ret) && (!found || !found_child) && i < op->get_num_of_child(); ++i) {
       bool tmp_found = false;
+      bool tmp_found_child = false;
       const ObLogicalOperator *child = op->get_child(i);
-      if (OB_FAIL(has_bypassable_material(child, tmp_found))) {
+      if (OB_FAIL(has_bypassable_material(child, tmp_found, tmp_found_child))) {
         LOG_WARN("failed to process block parent", K(ret));
-      } else if (tmp_found) {
-        if (!op->is_block_input(i)) {
+      } else {
+        if (tmp_found && !op->is_block_input(i)) {
           found = true;
+        }
+        
+        if (tmp_found_child) {
+          found_child = true;
         }
       }
     } // end for
@@ -248,6 +266,19 @@ int SchedDepthGenerator::set_dfo_need_early_sched(ObLogicalOperator *op)
     } else if (!contains_consume1by1) {
       exchange_out->set_child_finish_for_early_sched();
     }
+  }
+  return ret;
+}
+
+int SchedDepthGenerator::set_dfo_need_child_early_sched(ObLogicalOperator *op)
+{
+  int ret = OB_SUCCESS;
+  ObLogExchange *exchange_out = static_cast<ObLogExchange *>(op);
+  if (OB_ISNULL(exchange_out) || !exchange_out->is_producer()) {
+    ret = OB_ERR_UNEXPECTED;
+    LOG_WARN("root op of dfo should be exchange out");
+  } else {
+    exchange_out->set_need_child_early_sched();
   }
   return ret;
 }

@@ -4102,7 +4102,7 @@ int ObLogicalOperator::px_pipe_blocking_post(ObPxPipeBlockingCtx &ctx)
                 && !static_cast<ObLogDistinct *>(child)->is_push_down()) {
               static_cast<ObLogDistinct*>(child)->set_block_mode(true);
               LOG_DEBUG("distinct block mode", K(lbt()));
-            } else if (OB_FAIL(allocate_material(i, false))) {
+            } else if (OB_FAIL(allocate_material(i, true))) {
               LOG_WARN("allocate material failed", K(ret));
             }
           } else if (!got_in_exch) {

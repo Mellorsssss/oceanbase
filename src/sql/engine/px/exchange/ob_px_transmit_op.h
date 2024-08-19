@@ -83,6 +83,7 @@ public:
   bool need_null_aware_shuffle_;
   // true if the corresponding DFO could be early sched
   bool need_early_sched_;
+  bool need_child_early_sched_;
   bool child_finish_for_early_sched_;
   // Fill the partition id to this expr for the above pdml or nlj partition pruning,
   ObExpr *tablet_id_expr_;

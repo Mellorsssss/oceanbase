@@ -4054,6 +4054,7 @@ int ObStaticEngineCG::generate_basic_transmit_spec(
     OZ(check_rollup_distributor(&spec));
     spec.use_rich_format_ &= op.support_rich_format_vectorize();
     spec.need_early_sched_ = op.need_early_sched();
+    spec.need_child_early_sched_ = op.need_child_early_sched();
     spec.child_finish_for_early_sched_ = op.child_finish_for_early_sched();
     LOG_TRACE("CG transmit", K(op.get_dfo_id()), K(op.get_op_id()),
               K(op.get_dist_method()), K(op.get_unmatch_row_dist_method()),

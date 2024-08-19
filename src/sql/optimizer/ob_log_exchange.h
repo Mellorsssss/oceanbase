@@ -33,6 +33,7 @@ public:
       expected_worker_count_(0),
       pipeline_depth_(0),
       need_early_sched_(false),
+      need_child_early_sched_(false),
       child_finish_for_early_sched_(false),
       is_remote_(false),
       is_task_order_(false),
@@ -129,6 +130,8 @@ public:
   int64_t get_pipeline_depth() const { return pipeline_depth_; }
   void set_need_early_sched() { need_early_sched_ = true; }
   bool need_early_sched() const { return need_early_sched_; }
+  void set_need_child_early_sched() { need_child_early_sched_ = true; }
+  bool need_child_early_sched() const { return need_child_early_sched_; }
   void set_child_finish_for_early_sched() { child_finish_for_early_sched_ = true; };
   bool child_finish_for_early_sched() const { return child_finish_for_early_sched_; }
   virtual int px_pipe_blocking_pre(ObPxPipeBlockingCtx &ctx) override;
@@ -233,6 +236,7 @@ private:
   int64_t expected_worker_count_; // 仅供 QC 节点使用，其余 exchange 节点均为 0
   int64_t pipeline_depth_; // only valid on QC (default as 0)
   bool need_early_sched_; // true if the dfo this exchange belongs to could be early scheduled
+  bool need_child_early_sched_; // true if the dfo's child DFOs should be early scheduled
   bool child_finish_for_early_sched_; // true if the dfo early schedule iff all its child DFOs are
                                       // scheduled
 

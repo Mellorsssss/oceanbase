@@ -92,6 +92,7 @@ private:
   static int try_set_dfo_block(ObExecContext &exec_ctx, ObDfo &dfo, bool block = true);
   static int try_set_dfo_unblock(ObExecContext &exec_ctx, ObDfo &dfo);
   static bool check_if_need_do_earlier_sched(ObDfo &child, const int64_t pipeline_depth);
+  static bool check_if_need_do_child_earlier_sched(ObDfo &dfo);
   static int bypass_material(ObExecContext &exec_ctx, const ObOpSpec *phy_op, bool bypass);
 };
 

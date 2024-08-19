@@ -96,6 +96,7 @@ int ObDfoSchedDepthGenerator::do_generate_sched_depth(ObExecContext &exec_ctx, O
       LOG_WARN("fail do generate edge", K(*child), K(ret));
     } else {
       bool need_earlier_sched = check_if_need_do_earlier_sched(*child, pipeline_depth);
+      bool need_child_earlier_sched = check_if_need_do_child_earlier_sched(*child);
       if (need_earlier_sched) {
         // current pair of DFOs are earlier scheduled, block the parent DFO's material
         // (parent DFO maybe unblocked later) to prevent unexpected hang
@@ -140,6 +141,9 @@ int ObDfoSchedDepthGenerator::do_generate_sched_depth(ObExecContext &exec_ctx, O
           LOG_TRACE("parent dfo can do earlier scheduling", K(child->get_dfo_id()), K(parent.get_dfo_id()));
         }
       }
+      if (need_child_earlier_sched) {
+        child->set_child_earlier_sched();
+      }
     }
   }
   return ret;
@@ -158,6 +162,18 @@ bool ObDfoSchedDepthGenerator::check_if_need_do_earlier_sched(ObDfo &dfo,
     }
   }
   return do_earlier_sched;
+}
+
+bool ObDfoSchedDepthGenerator::check_if_need_do_child_earlier_sched(ObDfo &dfo)
+{
+  bool do_child_earlier_sched = false;
+  const ObOpSpec *phy_op = dfo.get_root_op_spec();
+  const ObPxTransmitSpec *trans_op = NULL;
+  if (OB_NOT_NULL(phy_op) && IS_PX_TRANSMIT(phy_op->type_)
+      && OB_NOT_NULL(trans_op = static_cast<const ObPxTransmitSpec *>(phy_op))) {
+    do_child_earlier_sched = trans_op->need_child_early_sched_;
+  }
+  return do_child_earlier_sched;
 }
 
 int ObDfoSchedDepthGenerator::bypass_material(ObExecContext &exec_ctx, const ObOpSpec *phy_op,
@@ -1236,12 +1252,12 @@ int ObDfoMgr::get_ready_dfos(ObIArray<ObDfo*> &dfos) const
         }
       }
 
-      // If one of root_edge's child has scheduled, we try to start the root_dfo.
       if (OB_SUCC(ret) && dfos.empty()) {
         if (edge->is_active() &&
             !root_edge->is_active() &&
             edge->has_parent() &&
             edge->parent() == root_edge) {
+          // If one of root_edge's child has scheduled, we try to start the root_dfo.
           // 本分支是一个优化，提前调度起 root dfo，使得 root dfo
           // 可以及时拉取下面的数据。在某些场景下，可以避免下层 dfo 添加
           // 不必要的 material 算子阻塞数据流动
@@ -1258,6 +1274,34 @@ int ObDfoMgr::get_ready_dfos(ObIArray<ObDfo*> &dfos) const
           } else {
             root_edge->set_active();
             LOG_TRACE("Try to schedule root dfo", KP(root_edge), KP(root_dfo_));
+          }
+        } else {
+          bool ready_to_sched = false;
+          bool need_child_early_sched = false;
+          ObDfo *parent_edge = edge->parent();
+          ObDfo *child_edge = edge;
+          
+          // consider all the earler scheduled ancester DFOs and check if they need child DFOs sched
+          while (!need_child_early_sched && OB_NOT_NULL(parent_edge) && child_edge->is_active()) {
+            ready_to_sched = false;
+            if (!parent_edge->is_child_earlier_sched()) {
+              // no need to earlier schedule the child DFOs
+              parent_edge = parent_edge->parent(); 
+              child_edge = child_edge->parent();
+            } else if (OB_FAIL(parent_edge->ready_to_earlier_sched(ready_to_sched))) {
+              LOG_WARN("fail to get if parent is ready to be earlier scheduled");
+              break;
+            } else if (ready_to_sched) {
+              // do nothing
+              parent_edge = parent_edge->parent();
+              child_edge = child_edge->parent();
+            } else {
+              need_child_early_sched = true;
+            }
+          }
+          
+          if (need_child_early_sched) {
+            continue;
           }
         }
       }

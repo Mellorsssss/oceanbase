@@ -102,10 +102,10 @@ int ObPxTransmitOpInput::get_data_ch(ObPxTaskChSet &task_ch_set, int64_t timeout
   return ret;
 }
 //------------- end ObPxTransmitOpInput -------
-OB_SERIALIZE_MEMBER((ObPxTransmitSpec, ObTransmitSpec),
-    sample_type_, need_null_aware_shuffle_, need_early_sched_, child_finish_for_early_sched_,
-    tablet_id_expr_, random_expr_, sampling_saving_row_,
-    repartition_table_id_, wf_hybrid_aggr_status_expr_, wf_hybrid_pby_exprs_cnt_array_);
+OB_SERIALIZE_MEMBER((ObPxTransmitSpec, ObTransmitSpec), sample_type_, need_null_aware_shuffle_,
+                    need_early_sched_, need_child_early_sched_, child_finish_for_early_sched_,
+                    tablet_id_expr_, random_expr_, sampling_saving_row_, repartition_table_id_,
+                    wf_hybrid_aggr_status_expr_, wf_hybrid_pby_exprs_cnt_array_);
 
 ObPxTransmitSpec::ObPxTransmitSpec(ObIAllocator &alloc, const ObPhyOperatorType type)
     : ObTransmitSpec(alloc, type),
