@@ -69,7 +69,7 @@ int ObDfoSchedOrderGenerator::do_generate_sched_order(ObDfoMgr &dfo_mgr, ObDfo &
 
 int ObDfoSchedDepthGenerator::generate_sched_depth(ObExecContext &exec_ctx, ObDfoMgr &dfo_mgr, const int64_t pipeline_depth) {
   int ret = OB_SUCCESS;
-  if (pipeline_depth > 2) {
+  if (pipeline_depth > 2 && exec_ctx.should_do_bypass_material()) {
     ObDfo *dfo_tree = dfo_mgr.get_root_dfo();
     if (OB_ISNULL(dfo_tree)) {
       ret = OB_ERR_UNEXPECTED;

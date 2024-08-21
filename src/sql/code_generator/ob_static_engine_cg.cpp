@@ -8376,6 +8376,10 @@ int ObStaticEngineCG::set_other_properties(const ObLogPlan &log_plan, ObPhysical
     phy_plan.set_px_dop(log_plan.get_optimizer_context().get_max_parallel());
     phy_plan.set_expected_worker_count(log_plan.get_optimizer_context().get_expected_worker_count());
     phy_plan.set_minimal_worker_count(log_plan.get_optimizer_context().get_minimal_worker_count());
+    phy_plan.set_bypass_material_expected_worker_count(
+      log_plan.get_optimizer_context().get_bypass_material_expected_worker_count());
+    phy_plan.set_bypass_material_minimal_worker_count(
+      log_plan.get_optimizer_context().get_bypass_material_minimal_worker_count());
     phy_plan.set_is_batched_multi_stmt(log_plan.get_optimizer_context().is_batched_multi_stmt());
     phy_plan.set_need_consistent_snapshot(log_plan.need_consistent_read());
     // only if all servers's version >= CLUSTER_VERSION_4_2_0_0
@@ -8385,6 +8389,12 @@ int ObStaticEngineCG::set_other_properties(const ObLogPlan &log_plan, ObPhysical
     if (OB_FAIL(phy_plan.set_expected_worker_map(log_plan.get_optimizer_context().get_expected_worker_map()))) {
       LOG_WARN("set expected worker map", K(ret));
     } else if (OB_FAIL(phy_plan.set_minimal_worker_map(log_plan.get_optimizer_context().get_minimal_worker_map()))) {
+      LOG_WARN("set minimal worker map", K(ret));
+    } else if (OB_FAIL(phy_plan.set_bypass_material_expected_worker_map(
+                 log_plan.get_optimizer_context().get_bypass_material_expected_worker_map()))) {
+      LOG_WARN("set expected worker map", K(ret));
+    } else if (OB_FAIL(phy_plan.set_bypass_material_minimal_worker_map(
+                 log_plan.get_optimizer_context().get_bypass_material_minimal_worker_map()))) {
       LOG_WARN("set minimal worker map", K(ret));
     } else if (OB_FAIL(phy_plan.set_mview_ids(mview_ids_))) {
       LOG_WARN("failed to set set mview_ids", K(ret), K(mview_ids_.count()));
