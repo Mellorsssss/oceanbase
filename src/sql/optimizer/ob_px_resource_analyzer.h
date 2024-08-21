@@ -174,6 +174,8 @@ class ObLogExchange;
 
 /*
  * 计算逻辑计划需要预约多少组线程才能调度成功
+ * ObPxResourceAnalyzer maybe called multiple times to analyze the same plan tree(with/without bypass
+ * material)
  */
 class ObPxResourceAnalyzer
 {
@@ -212,6 +214,7 @@ struct PxInfo {
 public:
   ObPxResourceAnalyzer();
   ~ObPxResourceAnalyzer() = default;
+  void set_do_bypass() { do_bypass_ = true; }
   int analyze(
       ObLogicalOperator &root_op,
       int64_t &max_parallel_thread_count,
@@ -291,6 +294,7 @@ private:
   /* variables */
   common::ObArenaAllocator allocator_;
   ObArray<PxInfo *> px_trees_;
+  bool do_bypass_;
   DISALLOW_COPY_AND_ASSIGN(ObPxResourceAnalyzer);
 };
 

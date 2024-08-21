@@ -39,7 +39,7 @@ public:
 class SchedDepthGenerator
 {
 public:
-  SchedDepthGenerator() = default;
+  SchedDepthGenerator(bool do_bypass) : do_bypass_(do_bypass){};
   ~SchedDepthGenerator() = default;
   int generate(DfoInfo &root, ObIArray<DfoInfo *> &edges);
 
@@ -50,6 +50,7 @@ private:
   int has_operator_consume_1by1(const ObLogicalOperator *op, bool &found) const;
   int set_dfo_need_early_sched(ObLogicalOperator *log_op);
   int set_dfo_need_child_early_sched(ObLogicalOperator *log_op);
+  bool do_bypass_; // bypass the material
 };
 } // namespace sql
 }
@@ -93,7 +94,7 @@ int SchedDepthGenerator::generate(DfoInfo &root, ObIArray<DfoInfo *> &edges)
       ret = OB_ERR_UNEXPECTED;
     } else if (OB_FAIL(generate(*child, edges))) {
       LOG_WARN("fail do generate edge", K(*child), K(ret));
-    } else {
+    } else if(do_bypass_) {
       bool do_earlier_sched = false;
       bool do_child_earlier_sched = false;
       if (OB_FAIL(check_if_need_do_earlier_sched(*child, do_earlier_sched, do_child_earlier_sched))) {
@@ -360,7 +361,7 @@ int DfoInfo::get_child(int64_t idx, DfoInfo *&child)
 
 
 ObPxResourceAnalyzer::ObPxResourceAnalyzer()
-  : allocator_(CURRENT_CONTEXT->get_malloc_allocator())
+  : allocator_(CURRENT_CONTEXT->get_malloc_allocator()), do_bypass_(false)
 {
   allocator_.set_label("PxResourceAnaly");
 }
@@ -804,7 +805,7 @@ int ObPxResourceAnalyzer::walk_through_dfo_tree(
   // 模拟调度过程
   ObArray<DfoInfo *> edges;
   SchedOrderGenerator sched_order_gen;
-  SchedDepthGenerator sched_depth_gen;
+  SchedDepthGenerator sched_depth_gen(do_bypass_);
   int64_t bucket_size = cal_next_prime(10);
   ObHashMap<ObAddr, int64_t> current_thread_map;
   ObHashMap<ObAddr, int64_t> current_group_map;
