@@ -14,7 +14,10 @@ target_compile_definitions(ob_base INTERFACE
   RELEASEID="${BUILD_NUMBER}"
   )
 target_compile_options(ob_base INTERFACE
-  $<$<COMPILE_LANGUAGE:CXX>:-Wno-invalid-offsetof>)
+  $<$<COMPILE_LANGUAGE:CXX>:-Wno-invalid-offsetof>
+  #-mtune=core-avx2 -mavx2 -mfma -mbmi2 -mavx512vl -mavx512bw
+  -mtune=skylake-avx512 -mavx2 -mfma -mbmi2 -mavx512vl -mavx512bw
+  )
 
 function(ob_server_add_target target)
   message(STATUS "observer_add_target ${target}")

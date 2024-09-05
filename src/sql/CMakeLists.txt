@@ -1380,9 +1380,19 @@ ob_server_add_target(ob_sql_simd)
 if (${ARCHITECTURE} STREQUAL "x86_64")
 	target_compile_options(ob_sql_simd
 	  PRIVATE
-		-mtune=core-avx2 -mavx2 -mfma -mbmi2 -mavx512vl -mavx512bw
+		#-mtune=core-avx2 -mavx2 -mfma -mbmi2 -mavx512vl -mavx512bw
+		-mtune=skylake-avx512 -mavx2 -mfma -mbmi2 -mavx512vl -mavx512bw
 	)
 endif()
+
+#if (${ARCHITECTURE} STREQUAL "x86_64")
+#	target_compile_options(ob_sql
+#	  #PRIVATE
+#		#-mtune=core-avx2 -mavx2 -mfma -mbmi2 -mavx512vl -mavx512bw
+#    PUBLIC
+#		-mtune=skylake-avx512 -mavx2 -mfma -mbmi2 -mavx512vl -mavx512bw -fvectorize
+#	)
+#endif()
 
 target_link_libraries(ob_sql PUBLIC ob_base)
 

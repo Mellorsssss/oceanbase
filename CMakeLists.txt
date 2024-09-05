@@ -110,6 +110,9 @@ if (OB_BUILD_PACKAGE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOB_BUILD_PACKAGE")
 endif()
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w -fvectorize") # -mtune=core-avx2 -mavx2 -mfma -mbmi2 -mavx512vl -mavx512bw")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -fvectorize") # -mtune=core-avx2 -mavx2 -mfma -mbmi2 -mavx512vl -mavx512bw")
+
 message(STATUS "This is BINARY dir " ${PROJECT_BINARY_DIR})
 message(STATUS "This is SOURCE dir " ${PROJECT_SOURCE_DIR})
 
