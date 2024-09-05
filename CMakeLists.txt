@@ -110,6 +110,16 @@ if (OB_BUILD_PACKAGE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOB_BUILD_PACKAGE")
 endif()
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w -Wno-error=enum-constexpr-conversion -Wno-error=unused-but-set-variable -Wno-error=-Wsingle-bit-bitfield-constant-conversion -Wno-incompatible-function-pointer-types -Wno-implicit-function-declaration -Wno-cast-function-type-strict -Wno-incompatible-function-pointer-types-strict")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -fno-optimize-sibling-calls -fpseudo-probe-for-profiling") 
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Wno-error=enum-constexpr-conversion -Wno-error=unused-but-set-variable -Wno-error=-Wsingle-bit-bitfield-constant-conversion  -Wno-incompatible-function-pointer-types -Wno-implicit-function-declaration -Wno-cast-function-type-strict -Wno-incompatible-function-pointer-types-strict")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -fno-optimize-sibling-calls -fpseudo-probe-for-profiling") 
+
+# for FDO
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-sample-use=/data/1/celan_code/perf/test.spgo.prof")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-sample-use=/data/1/celan_code/perf/test.spgo.prof")
+
 message(STATUS "This is BINARY dir " ${PROJECT_BINARY_DIR})
 message(STATUS "This is SOURCE dir " ${PROJECT_SOURCE_DIR})
 

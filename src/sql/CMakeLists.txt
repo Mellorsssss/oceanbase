@@ -1404,3 +1404,6 @@ if(RET AND NOT RET EQUAL 0)
 endif()
 
 add_subdirectory(parser)
+
+message(STATUS "In sql module C Compiler flags: ${CMAKE_C_FLAGS}")
+message(STATUS "In sql moduel C++ Compiler flags: ${CMAKE_CXX_FLAGS}")

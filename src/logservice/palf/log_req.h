@@ -36,7 +36,7 @@ enum PushLogType
 
 inline const char *push_log_type_2_str(const PushLogType type)
 {
-#define EXTRACT_PUSH_LOG_TYPE(type_var) ({ case(type_var): return #type_var; })
+#define EXTRACT_PUSH_LOG_TYPE(type_var) case type_var: return #type_var
   switch(type)
   {
     EXTRACT_PUSH_LOG_TYPE(PUSH_LOG);
@@ -131,12 +131,12 @@ enum FetchLogType
 
 inline const char *fetch_type_2_str(const FetchLogType type)
 {
-#define EXTRACT_FETCH_TYPE(type_var) ({ case(type_var): return #type_var; })
+#define EXTRACT_FETCH_TYPE(type_var)  case(type_var): return #type_var; 
   switch(type)
   {
-    EXTRACT_FETCH_TYPE(FETCH_LOG_FOLLOWER);
-    EXTRACT_FETCH_TYPE(FETCH_LOG_LEADER_RECONFIRM);
-    EXTRACT_FETCH_TYPE(FETCH_MODE_META);
+    EXTRACT_FETCH_TYPE(FETCH_LOG_FOLLOWER)
+    EXTRACT_FETCH_TYPE(FETCH_LOG_LEADER_RECONFIRM)
+    EXTRACT_FETCH_TYPE(FETCH_MODE_META)
 
     default:
       return "Invalid Type";

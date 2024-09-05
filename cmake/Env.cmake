@@ -4,6 +4,9 @@ ob_define(ASAN_IGNORE_LIST "${CMAKE_SOURCE_DIR}/asan_ignore_list.txt")
 
 ob_define(DEP_3RD_DIR "${CMAKE_SOURCE_DIR}/deps/3rd")
 ob_define(DEVTOOLS_DIR "${CMAKE_SOURCE_DIR}/deps/3rd/usr/local/oceanbase/devtools")
+#ob_define(LLVM_DIR "/data/1/celan_code/tools/llvm-project-llvmorg-15.0.7/build")
+#ob_define(LLVM_DIR "/data/1/celan_code/tools/llvm-project-llvmorg-18.1.8/build")
+ob_define(LLVM_DIR "/data/1/celan_code/tools/llvm-project-llvmorg-16.0.6/build")
 ob_define(DEP_DIR "${CMAKE_SOURCE_DIR}/deps/3rd/usr/local/oceanbase/deps/devel")
 
 ob_define(OB_BUILD_CDC OFF)
@@ -87,7 +90,8 @@ endif()
 
 if(OB_DISABLE_PIE)
   message(STATUS "build without pie")
-  set(PIE_OPT "")
+  # after clang-11, pie is enabled by default
+  set(PIE_OPT "-no-pie")
 else()
   message(STATUS "build with pie")
   set(PIE_OPT "-pie")
@@ -201,7 +205,7 @@ if (OB_USE_CLANG)
     message(STATUS "Using OB_CC compiler: ${OB_CC}")
   else()
     find_program(OB_CC clang
-    "${DEVTOOLS_DIR}/bin"
+    "${LLVM_DIR}/bin"
       NO_DEFAULT_PATH)
   endif()
 
@@ -209,7 +213,7 @@ if (OB_USE_CLANG)
     message(STATUS "Using OB_CXX compiler: ${OB_CXX}")
   else()
     find_program(OB_CXX clang++
-    "${DEVTOOLS_DIR}/bin"
+    "${LLVM_DIR}/bin"
       NO_DEFAULT_PATH)
   endif()
 
@@ -217,17 +221,17 @@ if (OB_USE_CLANG)
     PATHS ${CMAKE_SOURCE_DIR}/deps/3rd/usr/local/oceanbase
     NO_DEFAULT_PATH)
   set(_CMAKE_TOOLCHAIN_PREFIX llvm-)
-  set(_CMAKE_TOOLCHAIN_LOCATION "${DEVTOOLS_DIR}/bin")
+  set(_CMAKE_TOOLCHAIN_LOCATION "${LLVM_DIR}/bin")
 
   if (OB_USE_ASAN)
     ob_define(CMAKE_ASAN_FLAG "-fstack-protector-strong -fsanitize=address -fno-optimize-sibling-calls -fsanitize-blacklist=${ASAN_IGNORE_LIST}")
   endif()
 
   if (OB_USE_LLD)
-    set(LD_OPT "-fuse-ld=${DEVTOOLS_DIR}/bin/ld.lld")
+    set(LD_OPT "-fuse-ld=${LLVM_DIR}/bin/ld.lld")
     set(REORDER_COMP_OPT "-ffunction-sections -fdebug-info-for-profiling")
     set(REORDER_LINK_OPT "-Wl,--no-rosegment,--build-id=sha1 ${HOTFUNC_OPT}")
-    set(OB_LD_BIN "${DEVTOOLS_DIR}/bin/ld.lld")
+    set(OB_LD_BIN "${LLVM_DIR}/bin/ld.lld")
   endif()
   set(CMAKE_CXX_FLAGS "--gcc-toolchain=${GCC9} ${DEBUG_PREFIX} ${AUTO_FDO_OPT} ${THIN_LTO_OPT} -fcolor-diagnostics ${REORDER_COMP_OPT} -fmax-type-align=8 ${CMAKE_ASAN_FLAG} -std=gnu++11")
   set(CMAKE_C_FLAGS "--gcc-toolchain=${GCC9} ${DEBUG_PREFIX} ${AUTO_FDO_OPT} ${THIN_LTO_OPT} -fcolor-diagnostics ${REORDER_COMP_OPT} -fmax-type-align=8 ${CMAKE_ASAN_FLAG}")

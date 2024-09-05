@@ -12,7 +12,7 @@ KERNEL_RELEASE=`grep -Po 'release [0-9]{1}' /etc/issue 2>/dev/null`
 
 ALL_ARGS=("$@")
 BUILD_ARGS=()
-MAKE_ARGS=(-j $CPU_CORES)
+MAKE_ARGS=(-j 32) #$CPU_CORES)
 NEED_MAKE=false
 NEED_INIT=false
 LLD_OPTION=ON
@@ -158,7 +158,12 @@ function build
     set -- "${BUILD_ARGS[@]}"
     case "x$1" in
       xrelease)
-        do_build "$@" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOB_USE_LLD=$LLD_OPTION
+        # add hot functions
+        #do_build "$@" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOB_USE_LLD=$LLD_OPTION -DENABLE_HOTFUNC=ON
+        # final build
+        do_build "$@" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOB_USE_LLD=$LLD_OPTION -DENABLE_HOTFUNC=ON -DENABLE_THIN_LTO=ON
+        # for collect hot functions
+        #do_build "$@" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOB_USE_LLD=$LLD_OPTION -DOB_DISABLE_PIE=ON
         ;;
       xrelease_no_unity)
         do_build "$@" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOB_USE_LLD=$LLD_OPTION -DOB_ENABLE_UNITY=OFF
